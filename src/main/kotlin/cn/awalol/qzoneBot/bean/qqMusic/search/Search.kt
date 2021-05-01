@@ -1,5 +1,6 @@
 package cn.awalol.qzoneBot.bean.qqMusic.search
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class Search(
@@ -56,6 +57,7 @@ data class Song(
 	val list: List<ListItem?>? = null
 )
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class SingerItem(
 
 	@field:JsonProperty("name")
@@ -128,6 +130,7 @@ data class Data(
 	val priority: Int? = null
 )
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class ListItem(
 
 	@field:JsonProperty("preview")
