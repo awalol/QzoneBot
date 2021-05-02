@@ -4,32 +4,23 @@ import cn.awalol.qzoneBot.bean.qqMusic.Singer
 import cn.awalol.qzoneBot.bean.qqMusic.SongInfo
 import cn.awalol.qzoneBot.bean.qqMusic.search.ListItem
 import cn.awalol.qzoneBot.bean.qqMusic.search.Search
-import cn.awalol.qzoneBot.objectMapper
-import org.apache.http.NameValuePair
-import org.apache.http.client.entity.UrlEncodedFormEntity
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClients
-import org.apache.http.message.BasicNameValuePair
+import io.ktor.client.request.*
+import io.ktor.http.*
 import java.net.URLEncoder
-import java.util.ArrayList
 
 /**
  * @author awalo
  * @date 2021/3/7
  */
 object MusicApi {
-    private val httpClient : CloseableHttpClient = HttpClients.createDefault()
 
-    fun qqMusic_songInfo(mid: String): SongInfo {
-        val httpPost = HttpPost("http://c.y.qq.com/v8/fcg-bin/fcg_play_single_song.fcg?")
-        val params: ArrayList<NameValuePair> = ArrayList()
-        params.add(BasicNameValuePair("songmid", mid))
-        params.add(BasicNameValuePair("format", "json"))
-        httpPost.entity = UrlEncodedFormEntity(params)
-        val content = QzoneUtil.toString(httpClient.execute(httpPost).entity)
-        return objectMapper.readValue(content, SongInfo::class.java)
+    suspend fun qqMusicSongInfo(mid: String): SongInfo {
+        val stringResponse : String = client.post{
+            url("http://c.y.qq.com/v8/fcg-bin/fcg_play_single_song.fcg?")
+            body = "songmid=$mid&format=json"
+        }
+        println(stringResponse)
+        return objectMapper.readValue(stringResponse, SongInfo::class.java)
     }
 
     fun getSingers(singers : List<Singer>): String{
@@ -41,11 +32,13 @@ object MusicApi {
         return singerList.toString()
     }
 
-    fun qqMusic_search(songName : String,songSinger : String): ListItem? {
-        val httpGet = HttpGet("https://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp?format=json&n=20&p=0&w=" + URLEncoder.encode("$songName $songSinger") + "&cr=1&g_tk=5381&t=0")
-        httpGet.setHeader("Referer","https://y.qq.com")
-        val content = QzoneUtil.toString(httpClient.execute(httpGet).entity)
-        val jsonMapper = objectMapper.readValue(content,Search::class.java)
+    suspend fun qqMusicSearch(songName : String, songSinger : String): ListItem? {
+        val stringResponse : String = client.get("https://c.y.qq.com/soso/fcgi-bin/search_for_qq_cp?format=json&n=20&p=0&w=${URLEncoder.encode("$songName $songSinger")}&cr=1&g_tk=5381&t=0"){
+            headers{
+                append(HttpHeaders.Referrer,"https://y.qq.com")
+            }
+        }
+        val jsonMapper = objectMapper.readValue(stringResponse,Search::class.java)
         return jsonMapper!!.data!!.song!!.list!![0]
     }
 }

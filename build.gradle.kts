@@ -12,9 +12,10 @@ repositories {
 }
 
 dependencies {
-    api("net.mamoe", "mirai-core", "2.6.2")
+    api("net.mamoe", "mirai-core", "2.6.3")
     implementation("org.seleniumhq.selenium","selenium-java","4.0.0-beta-3")
-    implementation("org.apache.httpcomponents","httpclient","4.5.13")
+    implementation("io.ktor:ktor-client-core:1.5.1")
+    implementation("io.ktor:ktor-client-cio:1.5.1")
     implementation("com.fasterxml.jackson.core","jackson-core","2.12.1")
     implementation("com.fasterxml.jackson.core","jackson-annotations","2.12.1")
     implementation("com.fasterxml.jackson.core","jackson-databind","2.12.1")

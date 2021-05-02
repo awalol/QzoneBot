@@ -3,25 +3,15 @@ package cn.awalol.qzoneBot
 import cn.awalol.qzoneBot.bean.qzoneSuosuo.PicInfo
 import cn.awalol.qzoneBot.bean.qzoneSuosuo.PicinfoX
 import cn.awalol.qzoneBot.bean.qzoneSuosuo.UploadPic
-import cn.awalol.qzoneBot.objectMapper
-import cn.awalol.qzoneBot.qzoneCookie
-import org.apache.http.HttpEntity
-import org.apache.http.NameValuePair
-import org.apache.http.client.entity.UrlEncodedFormEntity
-import org.apache.http.client.methods.CloseableHttpResponse
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClients
-import org.apache.http.message.BasicNameValuePair
-import org.apache.http.util.EntityUtils
+import io.ktor.client.request.*
+import io.ktor.http.*
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.chrome.ChromeDriver
+import java.net.URLEncoder
 import java.util.*
-import kotlin.collections.ArrayList
 
 object QzoneUtil {
-    fun getGtk(sKey: String): Long {
+    private fun getGtk(sKey: String): Long {
         var hash: Long = 5381
         for (element in sKey) {
             hash += (hash shl 5) + element.toLong()
@@ -49,83 +39,66 @@ object QzoneUtil {
         }
     }
 
-    fun sendSuosuo(content : String) : String{
-        val client : CloseableHttpClient = HttpClients.createDefault()
-        val httpPost : HttpPost = HttpPost("https://mobile.qzone.qq.com/mood/publish_mood?g_tk=" + getGtk(
-            qzoneCookie.getValue("p_skey"))
-        )
-        httpPost.setHeader("cookie","p_uin=" + qzoneCookie.getValue("p_uin") + ";p_skey=" + qzoneCookie.getValue("p_skey") + ";")
-//        httpPost.setHeader("Content-Type","application/x-www-form-urlencoded; charset=utf-8")
-        val params = ArrayList<NameValuePair>()
-        params.add(BasicNameValuePair("opr_type","publish_shuoshuo"))
-        params.add(BasicNameValuePair("content",content))
-        params.add(BasicNameValuePair("format","json"))
-        httpPost.entity = UrlEncodedFormEntity(params)
-        val response: CloseableHttpResponse = client.execute(httpPost)
-        val responseEntity: HttpEntity = response.getEntity()
-        client.close()
-        return EntityUtils.toString(responseEntity)
+    suspend fun publishShuoshuo(content : String, image : String) : String{
+        //get image ByteArray
+        var imageBase64: String
+        val imageResponse : ByteArray = client.get(image)
+        imageBase64 = Base64.getUrlEncoder().encodeToString(imageResponse)
+        //upload Image to Qzone
+        val uploadPic1Response : String = client.post{
+            url("https://mobile.qzone.qq.com/up/cgi-bin/upload/cgi_upload_pic_v2?g_tk=" + getGtk(qzoneCookie.getValue("p_skey")))
+            headers{
+                append("cookie","p_uin=" + qzoneCookie.getValue("p_uin") + ";p_skey=" + qzoneCookie.getValue("p_skey") + ";")
+                append(HttpHeaders.ContentType,"application/x-www-form-urlencoded")
+            }
+            body = "picture=$imageBase64&output_type=json&preupload=1&base64=1"
+        }
+        println(getStringMiddleContent(uploadPic1Response,"_Callback(",");"))
+        val uploadPic : UploadPic = objectMapper.readValue(getStringMiddleContent(uploadPic1Response,"_Callback(",");"),
+            UploadPic::class.java) //JSON反序列化
+
+        //upload Image to ablum
+        val uploadPic2Response : String = client.post{
+            url("https://mobile.qzone.qq.com/up/cgi-bin/upload/cgi_upload_pic_v2?g_tk=" + getGtk(qzoneCookie.getValue("p_skey")))
+            headers{
+                append("cookie","p_uin=" + qzoneCookie.getValue("p_uin") + ";p_skey=" + qzoneCookie.getValue("p_skey") + ";")
+                append(HttpHeaders.ContentType,"application/x-www-form-urlencoded")
+            }
+            body = "output_type=json&preupload=2&md5=${uploadPic.filemd5}&filelen=${uploadPic.filelen}&refer=shuoshuo&albumtype=7"
+        }
+        val imageContent = getStringMiddleContent(uploadPic2Response,"_Callback([","]);")
+        println(imageContent)
+        val picInfo : PicinfoX = objectMapper.readValue(imageContent, PicInfo::class.java).picinfo
+
+        //publish Shuoshuo
+        return client.post{
+            url("https://mobile.qzone.qq.com/mood/publish_mood?g_tk=" + getGtk(qzoneCookie.getValue("p_skey")))
+            headers {
+                append(
+                    "cookie",
+                    "p_uin=" + qzoneCookie.getValue("p_uin") + ";p_skey=" + qzoneCookie.getValue("p_skey") + ";"
+                )
+            }
+            body = "opr_type=publish_shuoshuo&content=$content&format=json&richval=" + (picInfo.albumid + "," + picInfo.sloc + "," + picInfo.lloc + ",," + picInfo.height + "," + picInfo.width + ",,,")
+        }
     }
 
-    fun sendSuosuo(content : String,image : String) : String{
-        //Create HttpClient
-        val client : CloseableHttpClient = HttpClients.createDefault()
-        //encode Image
-        var imageBase64: String?;
-        val httpEntity_encodeimage : HttpEntity = client.execute(HttpGet(image)).entity
-        imageBase64 = Base64.getUrlEncoder().encodeToString(EntityUtils.toByteArray(httpEntity_encodeimage))
-        //upload Image to Qzone
-        val httpPost_upload = HttpPost("https://mobile.qzone.qq.com/up/cgi-bin/upload/cgi_upload_pic_v2?g_tk=".plus(
-            getGtk(qzoneCookie.getValue("p_skey"))))
-        httpPost_upload.setHeader("cookie","p_uin=".plus(qzoneCookie.getValue("p_uin")).plus(";p_skey=").plus(qzoneCookie.getValue("p_skey") + ";"))
-        httpPost_upload.setHeader("Content-Type","application/x-www-form-urlencoded")
-        val params_upload = ArrayList<NameValuePair>()
-        params_upload.add(BasicNameValuePair("picture",imageBase64))
-        params_upload.add(BasicNameValuePair("output_type","json"))
-        params_upload.add(BasicNameValuePair("preupload","1"))
-        params_upload.add(BasicNameValuePair("base64","1"))
-        httpPost_upload.entity = UrlEncodedFormEntity(params_upload)
-        val httpEntity_upload : HttpEntity = client.execute(httpPost_upload).entity
-        var test1 = toString(httpEntity_upload)
-        val uploadPic : UploadPic = objectMapper.readValue(getStringMiddleContent(test1,"_Callback(",");"),
-            UploadPic::class.java)
-        //upload Image to ablum
-        params_upload.clear()
-        params_upload.add(BasicNameValuePair("output_type","json"))
-        params_upload.add(BasicNameValuePair("preupload","2"))
-        params_upload.add(BasicNameValuePair("md5",uploadPic.filemd5))
-        params_upload.add(BasicNameValuePair("filelen",uploadPic.filelen.toString()))
-        params_upload.add(BasicNameValuePair("refer","shuoshuo"))
-        params_upload.add(BasicNameValuePair("albumtype","7"))
-        httpPost_upload.entity = UrlEncodedFormEntity(params_upload)
-        val httpEntity_image = client.execute(httpPost_upload).entity
-        val test = getStringMiddleContent(toString(httpEntity_image),"_Callback([","]);")
-        val picInfo : PicinfoX = objectMapper.readValue(test, PicInfo::class.java).picinfo
-        client.close()
-
-        //sendSuosuo
-        val client2 : CloseableHttpClient = HttpClients.createDefault()
-        val httpPost_suosuo = HttpPost("https://mobile.qzone.qq.com/mood/publish_mood?g_tk=" + getGtk(qzoneCookie.getValue("p_skey")))
-        httpPost_suosuo.setHeader("cookie","p_uin=" + qzoneCookie.getValue("p_uin") + ";p_skey=" + qzoneCookie.getValue("p_skey") + ";")
-        val params_suosuo = ArrayList<NameValuePair>()
-        params_suosuo.add(BasicNameValuePair("opr_type","publish_shuoshuo"))
-        params_suosuo.add(BasicNameValuePair("content",content))
-        params_suosuo.add(BasicNameValuePair("format","json"))
-        params_suosuo.add(BasicNameValuePair("richval",picInfo.albumid + "," + picInfo.sloc + "," + picInfo.lloc + ",," + picInfo.height + "," + picInfo.width + ",,,"))
-        httpPost_suosuo.entity = UrlEncodedFormEntity(params_suosuo,"UTF-8")
-        val httpResponse_suosuo = client2.execute(httpPost_suosuo)
-        val httpEntity_suosuo = httpResponse_suosuo.entity
-        client2.close()
-        return toString(httpEntity_suosuo)
+    suspend fun publishShuoshuo(content: String) : String{
+        return client.post{
+            url("https://mobile.qzone.qq.com/mood/publish_mood?g_tk=" + getGtk(qzoneCookie.getValue("p_skey")))
+            headers {
+                append(
+                    "cookie",
+                    "p_uin=" + qzoneCookie.getValue("p_uin") + ";p_skey=" + qzoneCookie.getValue("p_skey") + ";"
+                )
+            }
+            body = "opr_type=publish_shuoshuo&content=${URLEncoder.encode(content)}&format=json"
+        }
     }
 
     fun getStringMiddleContent (string: String,startString: String,endString: String) : String{
         val startIndex = string.indexOf(startString)
         val endIndex = string.indexOf(endString,startIndex)
         return string.substring(startIndex + startString.length,endIndex)
-    }
-
-    fun toString(entity : HttpEntity) : String{
-        return EntityUtils.toString(entity)
     }
 }

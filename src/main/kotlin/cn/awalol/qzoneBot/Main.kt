@@ -2,23 +2,29 @@ package cn.awalol.qzoneBot
 
 import cn.awalol.qzoneBot.bean.qqMusic.Singer
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.BotFactory
 import net.mamoe.mirai.contact.User
 import net.mamoe.mirai.event.Event
-import net.mamoe.mirai.event.events.*
+import net.mamoe.mirai.event.events.FriendMessageEvent
+import net.mamoe.mirai.event.events.MessageEvent
+import net.mamoe.mirai.event.events.StrangerMessageEvent
 import net.mamoe.mirai.event.globalEventChannel
-import net.mamoe.mirai.message.data.*
+import net.mamoe.mirai.message.data.Image
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
+import net.mamoe.mirai.message.data.MessageChain
+import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.utils.BotConfiguration
-import java.util.*
 import kotlin.system.exitProcess
 
 val qzoneCookie : HashMap<String, String> = HashMap()
 val objectMapper = ObjectMapper()
 val template = "#推歌意向征集#\n" +
-        "《%s》(%s)"
+        "《%s》（%s）"
 val singerBlackList = listOf("0011jjK40orUJx","002nXp292LIOGV","0022eAG537I1bg")
+val client = HttpClient(CIO)
 
 suspend fun main(args : Array<String>){
     val bot = BotFactory.newBot(args[0].toLong(), args[1]) {
@@ -63,33 +69,41 @@ suspend fun push(messageChain : MessageChain,bot : Bot,sender : User){
             val songName = "((?<=《).+(?=》))".toRegex().find(message)!!.value
             val songSinger = "(?<=[（|(]).+(?=[）|)])".toRegex().find(message)!!.value
             bot.logger.info("$songName $songSinger")
-            val songInfo = MusicApi.qqMusic_songInfo(
-                MusicApi.qqMusic_search(songName,songSinger)!!.songmid!!
+            val songInfo = MusicApi.qqMusicSongInfo(
+                MusicApi.qqMusicSearch(
+                    songName,
+                    songSinger
+                )!!.songmid!!
             )
             val songData = songInfo.data[0]
 
             //黑名单歌手判断
-            songData.singer.forEach{ singer: Singer ->
-                if(singerBlackList.contains(singer.mid)){
+            songData.singer.forEach { singer: Singer ->
+                if (singerBlackList.contains(singer.mid)) {
                     bot.logger.error(sender.id.toString() + " 尝试推送黑名单歌手:" + singer.title)
                     return
                 }
             }
 
             //发送说说
-            if(image != null){
-                QzoneUtil.sendSuosuo(
-                    template.format(songData.title,
-                        MusicApi.getSingers(songData.singer)),
-                    image!!.queryUrl()
-                )
-            }else{
-                QzoneUtil.sendSuosuo(
+            if (image != null) {
+                val test = QzoneUtil.publishShuoshuo(
                     template.format(
                         songData.title,
-                        MusicApi.getSingers(songData.singer)),
+                        MusicApi.getSingers(songData.singer)
+                    ),
+                    image!!.queryUrl()
+                )
+                println(test)
+            } else {
+                val test = QzoneUtil.publishShuoshuo(
+                    template.format(
+                        songData.title,
+                        MusicApi.getSingers(songData.singer)
+                    ),
                     "http://y.gtimg.cn/music/photo_new/T002R800x800M000%s.jpg".format(songData.album.mid)
                 )
+                println(test)
             }
         }
     }else{
