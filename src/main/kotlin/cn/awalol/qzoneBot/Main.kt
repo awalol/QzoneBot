@@ -22,7 +22,7 @@ val qzoneCookie : HashMap<String, String> = HashMap()
 val objectMapper = ObjectMapper()
 val template = "#推歌意向征集#\n" +
         "《%s》（%s）"
-val singerBlackList = listOf("0011jjK40orUJx","002nXp292LIOGV","0022eAG537I1bg")
+val singerBlackList = listOf("0011jjK40orUJx","002nXp292LIOGV","0022eAG537I1bg","0039JTTG0s4SCv")
 val client = HttpClient(CIO)
 lateinit var qqUin : String
 val waitToRepublish : HashMap<SongInfo,Image?> = HashMap()
@@ -113,7 +113,7 @@ suspend fun push(songInfo : SongInfo, bot : Bot, image : Image?){
                 songData.title,
                 MusicApi.getSingers(songData.singer)
             ),
-            image!!.queryUrl()
+            image.queryUrl()
         )
         println(test)
         if(waitToRepublish.containsKey(songInfo)){
