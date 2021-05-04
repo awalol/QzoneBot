@@ -74,15 +74,25 @@ suspend fun main(args : Array<String>){
                 )
 
                 try {
-                    push(songInfo,bot,image)
-                    //重试发送未发送成功的说说
-                    waitToRepublish.forEach { (t, u) ->
+                    if (QzoneUtil.cookieIsValid(qzoneCookie)) {
+                        push(songInfo,image,bot)
+
+                        //重试发送未发送成功的说说
                         println("尝试重新发送之前发送失败的说说")
-                        push(t, bot, u)
-                        Thread.sleep(10000)
+                        val iterator = waitToRepublish.iterator() //https://stackoverflow.com/questions/14673653/why-isnt-this-code-causing-a-concurrentmodificationexception
+                        while (iterator.hasNext()){
+                            val item = iterator.next()
+                            push(item.key,item.value,bot)
+                            iterator.remove()
+                        }
+                    }else{
+                        throw Exception("QQ空间登陆失败")
                     }
                 }catch (e : Exception){
                     e.printStackTrace()
+                    if(e.message?.contentEquals("QQ空间登陆失败") == true){
+                        QzoneUtil.login()//尝试重新登陆
+                    }
                     if(!waitToRepublish.containsKey(songInfo)){
                         waitToRepublish[songInfo] = image
                     }
@@ -95,7 +105,7 @@ suspend fun main(args : Array<String>){
     }
 }
 
-suspend fun push(songInfo : SongInfo, bot : Bot, image : Image?){
+suspend fun push(songInfo : SongInfo, image : Image?,bot : Bot){
     val songData = songInfo.data[0]
 
     //黑名单歌手判断
@@ -116,9 +126,6 @@ suspend fun push(songInfo : SongInfo, bot : Bot, image : Image?){
             image.queryUrl()
         )
         println(test)
-        if(waitToRepublish.containsKey(songInfo)){
-            waitToRepublish.remove(songInfo)
-        }
     } else {
         val test = QzoneUtil.publishShuoshuo(
             template.format(
@@ -128,8 +135,5 @@ suspend fun push(songInfo : SongInfo, bot : Bot, image : Image?){
             "http://y.gtimg.cn/music/photo_new/T002R800x800M000%s.jpg".format(songData.album.mid)
         )
         println(test)
-        if(waitToRepublish.containsKey(songInfo)){
-            waitToRepublish.remove(songInfo)
-        }
     }
 }

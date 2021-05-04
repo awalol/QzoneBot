@@ -5,15 +5,12 @@ import cn.awalol.qzoneBot.bean.qzoneSuosuo.PicinfoX
 import cn.awalol.qzoneBot.bean.qzoneSuosuo.UploadPic
 import io.ktor.client.request.*
 import io.ktor.http.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import org.openqa.selenium.By
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.chrome.ChromeDriver
-import org.openqa.selenium.remote.RemoteWebDriver
 import java.net.URLEncoder
 import java.util.*
+import java.util.concurrent.TimeUnit
+import kotlin.collections.HashMap
 
 const val clickScript = "var faces = document.getElementsByClassName(\"face\");\n" +
         "for(i = 0;i < faces.length;i++){\n" +
@@ -39,9 +36,7 @@ object QzoneUtil {
         while (true){
             if(provider.currentUrl.contains("https://user.qzone.qq.com/")){
                 provider.manage().cookies.forEach { cookie ->
-                    if(cookie.name.contentEquals("p_uin").or(cookie.name.contentEquals("p_skey"))){
-                        qzoneCookie.put(if (cookie.name.contentEquals("p_uin")) "p_uin" else "p_skey",cookie.value)
-                    }
+                    qzoneCookie[cookie.name] = cookie.value
                 }
                 provider.close()
                 return
@@ -58,7 +53,10 @@ object QzoneUtil {
         val uploadPic1Response : String = client.post{
             url("https://mobile.qzone.qq.com/up/cgi-bin/upload/cgi_upload_pic_v2?g_tk=" + getGtk(qzoneCookie.getValue("p_skey")))
             headers{
-                append(HttpHeaders.Cookie,"p_uin=" + qzoneCookie.getValue("p_uin") + ";p_skey=" + qzoneCookie.getValue("p_skey") + ";")
+                append(HttpHeaders.Cookie,
+                    "p_uin=${qzoneCookie.getValue("p_uin")}; " +
+                        "p_skey=${qzoneCookie.getValue("p_skey")};"
+                )
                 append(HttpHeaders.ContentType,"application/x-www-form-urlencoded")
                 append(HttpHeaders.UserAgent,"Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Mobile Safari/537.36")
             }
@@ -74,7 +72,10 @@ object QzoneUtil {
         val uploadPic2Response : String = client.post{
             url("https://mobile.qzone.qq.com/up/cgi-bin/upload/cgi_upload_pic_v2?g_tk=" + getGtk(qzoneCookie.getValue("p_skey")))
             headers{
-                append(HttpHeaders.Cookie,"p_uin=" + qzoneCookie.getValue("p_uin") + ";p_skey=" + qzoneCookie.getValue("p_skey") + ";")
+                append(HttpHeaders.Cookie,
+                    "p_uin=${qzoneCookie.getValue("p_uin")}; " +
+                        "p_skey=${qzoneCookie.getValue("p_skey")};"
+                )
                 append(HttpHeaders.ContentType,"application/x-www-form-urlencoded")
                 append(HttpHeaders.UserAgent,"Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Mobile Safari/537.36")
             }
@@ -90,7 +91,8 @@ object QzoneUtil {
             headers {
                 append(
                     HttpHeaders.Cookie,
-                    "p_uin=" + qzoneCookie.getValue("p_uin") + ";p_skey=" + qzoneCookie.getValue("p_skey") + ";"
+                    "p_uin=${qzoneCookie.getValue("p_uin")};" +
+                            "p_skey=${qzoneCookie.getValue("p_skey")};"
                 )
                 append(HttpHeaders.UserAgent,"Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Mobile Safari/537.36")
             }
@@ -115,5 +117,21 @@ object QzoneUtil {
         val startIndex = string.indexOf(startString)
         val endIndex = string.indexOf(endString,startIndex)
         return string.substring(startIndex + startString.length,endIndex)
+    }
+
+    suspend fun cookieIsValid(cookie : HashMap<String,String>) : Boolean{
+        //通过获取qq好友列表以判断Cookie是否存活
+        val stringResponse : String = client.get("https://mobile.qzone.qq.com/friend/mfriend_list?g_tk=${getGtk(cookie.getValue("p_skey"))}&res_type=normal&format=json"){
+            headers{
+                append(HttpHeaders.UserAgent,"Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Mobile Safari/537.36")
+                append(HttpHeaders.Cookie,
+                    "skey=${cookie.getValue("skey")}; " +
+                            "p_uin=${cookie.getValue("p_uin")};" +
+                            "pt4_token=${cookie.getValue("pt4_token")}; " +
+                            "p_skey=${cookie.getValue("p_skey")};"
+                )
+            }
+        }
+        return stringResponse.contains("\"code\":0")//懒得写JSON反序列化了，直接判断文本是否存在吧，如果出问题再改
     }
 }
