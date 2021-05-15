@@ -23,7 +23,7 @@ object QzoneUtil {
     private fun getGtk(sKey: String): Long {
         var hash: Long = 5381
         for (element in sKey) {
-            hash += (hash shl 5) + element.toLong()
+            hash += (hash shl 5) + element.code.toLong()
         }
         return hash and 0x7fffffff
     }
@@ -46,9 +46,8 @@ object QzoneUtil {
 
     suspend fun publishShuoshuo(content : String, image : String) : String{
         //get image ByteArray
-        var imageBase64: String
         val imageResponse : ByteArray = client.get(image)
-        imageBase64 = Base64.getUrlEncoder().encodeToString(imageResponse)
+        val imageBase64: String = Base64.getUrlEncoder().encodeToString(imageResponse)
         //upload Image to Qzone
         val uploadPic1Response : String = client.post{
             url("https://mobile.qzone.qq.com/up/cgi-bin/upload/cgi_upload_pic_v2?g_tk=" + getGtk(qzoneCookie.getValue("p_skey")))
@@ -63,7 +62,8 @@ object QzoneUtil {
             body = "picture=$imageBase64&output_type=json&preupload=1&base64=1&hd_quality=90"
         }
         println(getStringMiddleContent(uploadPic1Response,"_Callback(",");"))
-        val uploadPic : UploadPic = objectMapper.readValue(getStringMiddleContent(uploadPic1Response,"_Callback(",");"),
+        val uploadPic : UploadPic = objectMapper.readValue(
+            getStringMiddleContent(uploadPic1Response,"_Callback(",");"),
             UploadPic::class.java) //JSON反序列化
 
         Thread.sleep(1000)
@@ -86,7 +86,7 @@ object QzoneUtil {
         val picInfo : PicinfoX = objectMapper.readValue(imageContent, PicInfo::class.java).picinfo
 
         //publish Shuoshuo
-        return client.post{
+        val publishResponse : String = client.post{
             url("https://mobile.qzone.qq.com/mood/publish_mood?g_tk=" + getGtk(qzoneCookie.getValue("p_skey")))
             headers {
                 append(
@@ -98,6 +98,13 @@ object QzoneUtil {
             }
             body = "opr_type=publish_shuoshuo&content=${URLEncoder.encode(content)}&format=json&richval=" + (picInfo.albumid + "," + picInfo.sloc + "," + picInfo.lloc + ",," + picInfo.height + "," + picInfo.width + ",,,")
         }
+        val publishMap = objectMapper.readValue(publishResponse,Map::class.java) as Map<*, *>
+
+        if(publishMap["code"].toString().contentEquals("0").not()){
+            throw Exception("发送失败 -> $publishResponse")
+        }
+
+        return publishResponse
     }
 
     suspend fun publishShuoshuo(content: String) : String{

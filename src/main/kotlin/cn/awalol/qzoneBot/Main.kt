@@ -25,7 +25,7 @@ val template = "#推歌意向征集#\n" +
 val singerBlackList = listOf("0011jjK40orUJx","002nXp292LIOGV","0022eAG537I1bg","0039JTTG0s4SCv")
 val client = HttpClient(CIO)
 lateinit var qqUin : String
-val waitToRepublish : HashMap<SongInfo,Image?> = HashMap()
+val waitToRepublish : HashMap<String,Image?> = HashMap()
 
 suspend fun main(args : Array<String>){
     qqUin = args[0]
@@ -63,8 +63,8 @@ suspend fun main(args : Array<String>){
         if(qzoneCookie.isNotEmpty() && content.isNotEmpty()) {
             if("((?<=《).+(?=》))".toRegex().containsMatchIn(content) && "(?<=[（|(]).+(?=[）|)])".toRegex().containsMatchIn(content)){
                 //获取歌曲信息
-                val songName = "((?<=《).+(?=》))".toRegex().find(content)!!.value
-                val songSinger = "(?<=[（|(]).+(?=[）|)])".toRegex().find(content)!!.value
+                val songName = "((?<=《).+(?=》))".toRegex().findAll(content).first().value
+                val songSinger = "(?<=[（|(]).+(?=[）|)])".toRegex().findAll(content).last().value
                 bot.logger.info("$songName $songSinger")
                 val songInfo = MusicApi.qqMusicSongInfo(
                     MusicApi.qqMusicSearch(
@@ -78,12 +78,14 @@ suspend fun main(args : Array<String>){
                         push(songInfo,image,bot)
 
                         //重试发送未发送成功的说说
-                        println("尝试重新发送之前发送失败的说说")
-                        val iterator = waitToRepublish.iterator() //https://stackoverflow.com/questions/14673653/why-isnt-this-code-causing-a-concurrentmodificationexception
-                        while (iterator.hasNext()){
-                            val item = iterator.next()
-                            push(item.key,item.value,bot)
-                            iterator.remove()
+                        if(waitToRepublish.isNotEmpty()){
+                            println("尝试重新发送之前发送失败的说说")
+                            val iterator = waitToRepublish.iterator() //https://stackoverflow.com/questions/14673653/why-isnt-this-code-causing-a-concurrentmodificationexception
+                            while (iterator.hasNext()){
+                                val item = iterator.next()
+                                push(MusicApi.qqMusicSongInfo(item.key),item.value,bot)
+                                iterator.remove()
+                            }
                         }
                     }else{
                         throw Exception("QQ空间登陆失败")
@@ -93,8 +95,9 @@ suspend fun main(args : Array<String>){
                     if(e.message?.contentEquals("QQ空间登陆失败") == true){
                         QzoneUtil.login()//尝试重新登陆
                     }
-                    if(!waitToRepublish.containsKey(songInfo)){
-                        waitToRepublish[songInfo] = image
+                    if(!waitToRepublish.containsKey(songInfo.data[0].mid)){
+                        waitToRepublish[songInfo.data[0].mid] = image
+                        bot.logger.error("发送失败，已添加到重试列表")
                     }
                 }
             }
