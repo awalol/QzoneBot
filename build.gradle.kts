@@ -1,6 +1,6 @@
 plugins {
     java
-    kotlin("jvm") version "1.5.0"
+    kotlin("jvm") version "1.5.10"
     id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    api("net.mamoe", "mirai-core", "2.6.3")
+    api("net.mamoe", "mirai-core", "2.6.5")
     implementation("org.seleniumhq.selenium","selenium-java","4.0.0-beta-3")
     implementation("io.ktor:ktor-client-core:1.5.1")
     implementation("io.ktor:ktor-client-cio:1.5.1")
