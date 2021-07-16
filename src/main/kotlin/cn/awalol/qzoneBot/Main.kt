@@ -121,22 +121,20 @@ suspend fun push(songInfo : SongInfo, image : Image?,bot : Bot){
 
     //发送说说
     if (image != null) {
-        val test = QzoneUtil.publishShuoshuo(
+        QzoneUtil.publishShuoshuo(
             template.format(
                 songData.title,
-                MusicApi.getSingers(songData.singer)
+                songData.singer.joinToString(separator = "/"){it.name}
             ),
             image.queryUrl()
         )
-        println(test)
     } else {
-        val test = QzoneUtil.publishShuoshuo(
+        QzoneUtil.publishShuoshuo(
             template.format(
                 songData.title,
-                MusicApi.getSingers(songData.singer)
+                songData.singer.joinToString(separator = "/"){it.name}
             ),
             "http://y.gtimg.cn/music/photo_new/T002R800x800M000%s.jpg".format(songData.album.mid)
         )
-        println(test)
     }
 }
