@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    api("net.mamoe", "mirai-core", "2.6.5")
+    api("net.mamoe", "mirai-core", "2.7-M2")
     implementation("org.seleniumhq.selenium","selenium-java","4.0.0-beta-3")
     implementation("io.ktor:ktor-client-core:1.5.1")
     implementation("io.ktor:ktor-client-cio:1.5.1")
