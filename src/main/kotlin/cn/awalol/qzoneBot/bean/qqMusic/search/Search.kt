@@ -1,5 +1,6 @@
 package cn.awalol.qzoneBot.bean.qqMusic.search
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class Search(
@@ -26,6 +27,110 @@ data class Search(
 	val notice: String? = null
 )
 
+data class Semantic(
+
+	@field:JsonProperty("curnum")
+	val curnum: Int? = null,
+
+	@field:JsonProperty("curpage")
+	val curpage: Int? = null,
+
+	@field:JsonProperty("totalnum")
+	val totalnum: Int? = null,
+
+	@field:JsonProperty("list")
+	val list: List<Any?>? = null
+)
+
+data class Song(
+
+	@field:JsonProperty("curnum")
+	val curnum: Int? = null,
+
+	@field:JsonProperty("curpage")
+	val curpage: Int? = null,
+
+	@field:JsonProperty("totalnum")
+	val totalnum: Int? = null,
+
+	@field:JsonProperty("list")
+	val list: List<ListItem?>? = null
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class SingerItem(
+
+	@field:JsonProperty("name")
+	val name: String? = null,
+
+	@field:JsonProperty("name_hilight")
+	val nameHilight: String? = null,
+
+	@field:JsonProperty("mid")
+	val mid: String? = null,
+
+	@field:JsonProperty("id")
+	val id: Int? = null
+)
+
+data class Pay(
+
+	@field:JsonProperty("payplay")
+	val payplay: Int? = null,
+
+	@field:JsonProperty("payalbum")
+	val payalbum: Int? = null,
+
+	@field:JsonProperty("paydownload")
+	val paydownload: Int? = null,
+
+	@field:JsonProperty("paytrackmouth")
+	val paytrackmouth: Int? = null,
+
+	@field:JsonProperty("paytrackprice")
+	val paytrackprice: Int? = null,
+
+	@field:JsonProperty("payalbumprice")
+	val payalbumprice: Int? = null,
+
+	@field:JsonProperty("payinfo")
+	val payinfo: Int? = null
+)
+
+data class Zhida(
+
+	@field:JsonProperty("type")
+	val type: Int? = null,
+
+	@field:JsonProperty("chinesesinger")
+	val chinesesinger: Int? = null
+)
+
+data class Data(
+
+	@field:JsonProperty("song")
+	val song: Song? = null,
+
+	@field:JsonProperty("zhida")
+	val zhida: Zhida? = null,
+
+	@field:JsonProperty("semantic")
+	val semantic: Semantic? = null,
+
+	@field:JsonProperty("qc")
+	val qc: List<QcItem?>? = null,
+
+	@field:JsonProperty("totaltime")
+	val totaltime: Int? = null,
+
+	@field:JsonProperty("keyword")
+	val keyword: String? = null,
+
+	@field:JsonProperty("priority")
+	val priority: Int? = null
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class ListItem(
 
 	@field:JsonProperty("preview")
@@ -33,12 +138,6 @@ data class ListItem(
 
 	@field:JsonProperty("songname_hilight")
 	val songnameHilight: String? = null,
-
-	@field:JsonProperty("belongCD")
-	val belongCD: Int? = null,
-
-	@field:JsonProperty("newStatus")
-	val newStatus: Int? = null,
 
 	@field:JsonProperty("singer")
 	val singer: List<SingerItem?>? = null,
@@ -94,6 +193,9 @@ data class ListItem(
 	@field:JsonProperty("albummid")
 	val albummid: String? = null,
 
+	@field:JsonProperty("format")
+	val format: String? = null,
+
 	@field:JsonProperty("albumid")
 	val albumid: Int? = null,
 
@@ -118,11 +220,8 @@ data class ListItem(
 	@field:JsonProperty("size320")
 	val size320: Int? = null,
 
-	@field:JsonProperty("strMediaMid")
-	val strMediaMid: String? = null,
-
-	@field:JsonProperty("media_mid")
-	val mediaMid: String? = null,
+	@field:JsonProperty("songurl")
+	val songurl: String? = null,
 
 	@field:JsonProperty("t")
 	val T: Int? = null,
@@ -142,47 +241,17 @@ data class ListItem(
 	@field:JsonProperty("alertid")
 	val alertid: Int? = null,
 
-	@field:JsonProperty("cdIdx")
-	val cdIdx: Int? = null,
-
 	@field:JsonProperty("songid")
-	val songid: Int? = null,
-
-	@field:JsonProperty("format")
-	val format: String? = null,
-
-	@field:JsonProperty("songurl")
-	val songurl: String? = null
+	val songid: Int? = null
 )
 
-data class Data(
+data class QcItem(
 
-	@field:JsonProperty("song")
-	val song: Song? = null,
+	@field:JsonProperty("text")
+	val text: String? = null,
 
-	@field:JsonProperty("zhida")
-	val zhida: Zhida? = null,
-
-	@field:JsonProperty("semantic")
-	val semantic: Semantic? = null,
-
-	@field:JsonProperty("qc")
-	val qc: List<Any?>? = null,
-
-	@field:JsonProperty("tab")
-	val tab: Int? = null,
-
-	@field:JsonProperty("totaltime")
-	val totaltime: Int? = null,
-
-	@field:JsonProperty("keyword")
-	val keyword: String? = null,
-
-	@field:JsonProperty("priority")
-	val priority: Int? = null,
-
-	@field:JsonProperty("taglist")
-	val taglist: List<Any?>? = null
+	@field:JsonProperty("type")
+	val type: Int? = null
 )
 
 data class Preview(
@@ -195,82 +264,4 @@ data class Preview(
 
 	@field:JsonProperty("trysize")
 	val trysize: Int? = null
-)
-
-data class SingerItem(
-
-	@field:JsonProperty("name")
-	val name: String? = null,
-
-	@field:JsonProperty("name_hilight")
-	val nameHilight: String? = null,
-
-	@field:JsonProperty("mid")
-	val mid: String? = null,
-
-	@field:JsonProperty("id")
-	val id: Int? = null
-)
-
-data class Zhida(
-
-	@field:JsonProperty("type")
-	val type: Int? = null,
-
-	@field:JsonProperty("chinesesinger")
-	val chinesesinger: Int? = null
-)
-
-data class Song(
-
-	@field:JsonProperty("curnum")
-	val curnum: Int? = null,
-
-	@field:JsonProperty("curpage")
-	val curpage: Int? = null,
-
-	@field:JsonProperty("totalnum")
-	val totalnum: Int? = null,
-
-	@field:JsonProperty("list")
-	val list: List<ListItem?>? = null
-)
-
-data class Pay(
-
-	@field:JsonProperty("payplay")
-	val payplay: Int? = null,
-
-	@field:JsonProperty("payalbum")
-	val payalbum: Int? = null,
-
-	@field:JsonProperty("paydownload")
-	val paydownload: Int? = null,
-
-	@field:JsonProperty("paytrackmouth")
-	val paytrackmouth: Int? = null,
-
-	@field:JsonProperty("paytrackprice")
-	val paytrackprice: Int? = null,
-
-	@field:JsonProperty("payalbumprice")
-	val payalbumprice: Int? = null,
-
-	@field:JsonProperty("payinfo")
-	val payinfo: Int? = null
-)
-
-data class Semantic(
-
-	@field:JsonProperty("curnum")
-	val curnum: Int? = null,
-
-	@field:JsonProperty("curpage")
-	val curpage: Int? = null,
-
-	@field:JsonProperty("totalnum")
-	val totalnum: Int? = null,
-
-	@field:JsonProperty("list")
-	val list: List<Any?>? = null
 )
