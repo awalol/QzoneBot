@@ -67,10 +67,7 @@ suspend fun main(args : Array<String>){
                 val songSinger = "(?<=[（|(]).+(?=[）|)])".toRegex().findAll(content).last().value
                 bot.logger.info("$songName $songSinger")
                 val songInfo = MusicApi.qqMusicSongInfo(
-                    MusicApi.qqMusicSearch(
-                        songName,
-                        songSinger
-                    )!!.songmid!!
+                    (MusicApi.qqMusicSearch(songName, songSinger)!![0]["songmid"] as String)
                 )
 
                 try {
