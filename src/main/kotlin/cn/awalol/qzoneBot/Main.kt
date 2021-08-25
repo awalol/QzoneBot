@@ -20,7 +20,7 @@ import kotlin.system.exitProcess
 
 val qzoneCookie : HashMap<String, String> = HashMap()
 val objectMapper = ObjectMapper()
-val template = "#推歌意向征集#\n" +
+const val template = "#推歌意向征集#\n" +
         "《%s》（%s）"
 val singerBlackList = listOf("0011jjK40orUJx","002nXp292LIOGV","0022eAG537I1bg","0039JTTG0s4SCv")
 val client = HttpClient(CIO)
@@ -49,7 +49,7 @@ suspend fun main(args : Array<String>){
 
     bot.globalEventChannel().filter { event: Event -> event is FriendMessageEvent || event is StrangerMessageEvent }.subscribeAlways<MessageEvent> {
         var image : Image? = null
-        var content = ""
+        lateinit var content : String
         message.forEach { singleMessage ->
             if(singleMessage is Image){
                 image = Image(singleMessage.imageId)
@@ -61,13 +61,14 @@ suspend fun main(args : Array<String>){
         }
 
         if(qzoneCookie.isNotEmpty() && content.isNotEmpty()) {
+            //匹配《》与（）
             if("((?<=《).+(?=》))".toRegex().containsMatchIn(content) && "(?<=[（|(]).+(?=[）|)])".toRegex().containsMatchIn(content)){
                 //获取歌曲信息
                 val songName = "((?<=《).+(?=》))".toRegex().findAll(content).first().value
                 val songSinger = "(?<=[（|(]).+(?=[）|)])".toRegex().findAll(content).last().value
                 bot.logger.info("$songName $songSinger")
                 val songInfo = MusicApi.qqMusicSongInfo(
-                    (MusicApi.qqMusicSearch(songName, songSinger)!![0]["songmid"] as String)
+                    (MusicApi.qqMusicSearch(songName, songSinger)[0]["songmid"].asText())
                 )
 
                 try {
@@ -98,7 +99,7 @@ suspend fun main(args : Array<String>){
                     }
                 }
             }
-        }else if(qzoneCookie.isEmpty()){
+        } else if(qzoneCookie.isEmpty()){
             bot.logger.error("QQ空间未登录")
             bot.getFriend(3512311532)!!.sendMessage("[Error] 说说发送失败，QQ空间未登录")
         }

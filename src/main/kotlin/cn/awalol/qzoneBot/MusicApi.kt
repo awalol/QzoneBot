@@ -1,6 +1,7 @@
 package cn.awalol.qzoneBot
 
 import cn.awalol.qzoneBot.bean.qqMusic.SongInfo
+import com.fasterxml.jackson.databind.JsonNode
 import io.ktor.client.request.*
 import io.ktor.http.*
 import java.net.URLEncoder
@@ -20,13 +21,13 @@ object MusicApi {
         return objectMapper.readValue(stringResponse, SongInfo::class.java)
     }
 
-    suspend fun qqMusicSearch(songName : String, songSinger : String): ArrayList<Map<*,*>>? {
+    suspend fun qqMusicSearch(songName : String, songSinger : String): List<JsonNode> {
         val stringResponse : String = client.get("https://c.y.qq.com/soso/fcgi-bin/client_search_cp?format=json&n=20&p=0&w=${URLEncoder.encode("$songName $songSinger","UTF-8")}&cr=1&g_tk=5381&t=0"){
             headers{
                 append(HttpHeaders.Referrer,"https://y.qq.com")
             }
         }
-        val jsonMapper = objectMapper.readValue(stringResponse,Map::class.java)
-        return (((jsonMapper["data"] as Map<*,*>)["song"] as Map<*,*>)["list"] as ArrayList<Map<*,*>>)
+        val jsonNode = objectMapper.readTree(stringResponse)
+        return jsonNode["data"]["song"]["list"].toList()
     }
 }

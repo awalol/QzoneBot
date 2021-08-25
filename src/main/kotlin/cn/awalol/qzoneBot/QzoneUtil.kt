@@ -11,6 +11,10 @@ import java.net.URLEncoder
 import java.util.*
 import kotlin.collections.HashMap
 
+const val userAgent = "Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like" +
+        " Gecko)" +
+        " Chrome/90.0.4430.93 Mobile Safari/537.36"
+//自动点击脚本
 const val clickScript = "var faces = document.getElementsByClassName(\"face\");\n" +
         "for(i = 0;i < faces.length;i++){\n" +
         "    if(faces[i].getAttribute(\"uin\") == \"%s\"){\n" +
@@ -56,14 +60,13 @@ object QzoneUtil {
                         "p_skey=${qzoneCookie.getValue("p_skey")};"
                 )
                 append(HttpHeaders.ContentType,"application/x-www-form-urlencoded")
-                append(HttpHeaders.UserAgent,"Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Mobile Safari/537.36")
+                append(HttpHeaders.UserAgent, userAgent)
             }
             body = "picture=$imageBase64&output_type=json&preupload=1&base64=1&hd_quality=90"
         }
-        println(getStringMiddleContent(uploadPic1Response,"_Callback(",");"))
-        val uploadPic : UploadPic = objectMapper.readValue(
-            getStringMiddleContent(uploadPic1Response,"_Callback(",");"),
-            UploadPic::class.java) //JSON反序列化
+        val response = uploadPic1Response.getMiddleContent("_Callback(",");")
+        println(response)
+        val uploadPic = objectMapper.readValue(response,UploadPic::class.java)
 
         Thread.sleep(1000)
 
@@ -80,7 +83,8 @@ object QzoneUtil {
             }
             body = "output_type=json&preupload=2&md5=${uploadPic.filemd5}&filelen=${uploadPic.filelen}&refer=shuoshuo&albumtype=7"
         }
-        val imageContent = getStringMiddleContent(uploadPic2Response,"_Callback([","]);")
+
+        val imageContent = uploadPic2Response.getMiddleContent("_Callback([","]);")
         println(imageContent)
         val picInfo : PicinfoX = objectMapper.readValue(imageContent, PicInfo::class.java).picinfo
 
@@ -95,7 +99,8 @@ object QzoneUtil {
                 )
                 append(HttpHeaders.UserAgent,"Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Mobile Safari/537.36")
             }
-            body = "opr_type=publish_shuoshuo&content=${URLEncoder.encode(content)}&format=json&richval=" + (picInfo.albumid + "," + picInfo.sloc + "," + picInfo.lloc + ",," + picInfo.height + "," + picInfo.width + ",,,")
+            body = "opr_type=publish_shuoshuo&content=${URLEncoder.encode(content,"UTF-8")}&format=json&richval=" +
+                    (picInfo.albumid + "," + picInfo.sloc + "," + picInfo.lloc + ",," + picInfo.height + "," + picInfo.width + ",,,")
         }
         val publishMap = objectMapper.readValue(publishResponse,Map::class.java) as Map<*, *>
 
@@ -106,38 +111,21 @@ object QzoneUtil {
         return publishResponse
     }
 
-    suspend fun publishShuoshuo(content: String) : String{
-        return client.post{
-            url("https://mobile.qzone.qq.com/mood/publish_mood?g_tk=" + getGtk(qzoneCookie.getValue("p_skey")))
-            headers {
-                append(
-                    "cookie",
-                    "p_uin=" + qzoneCookie.getValue("p_uin") + ";p_skey=" + qzoneCookie.getValue("p_skey") + ";"
-                )
-            }
-            body = "opr_type=publish_shuoshuo&content=${URLEncoder.encode(content)}&format=json"
-        }
-    }
-
-    fun getStringMiddleContent (string: String,startString: String,endString: String) : String{
-        val startIndex = string.indexOf(startString)
-        val endIndex = string.indexOf(endString,startIndex)
-        return string.substring(startIndex + startString.length,endIndex)
+    private fun String.getMiddleContent (startString: String, endString: String) : String{
+        val startIndex = this.indexOf(startString)
+        val endIndex = this.indexOf(endString,startIndex)
+        return this.substring(startIndex + startString.length,endIndex)
     }
 
     suspend fun cookieIsValid(cookie : HashMap<String,String>) : Boolean{
         //通过获取qq好友列表以判断Cookie是否存活
         val stringResponse : String = client.get("https://mobile.qzone.qq.com/friend/mfriend_list?g_tk=${getGtk(cookie.getValue("p_skey"))}&res_type=normal&format=json"){
             headers{
-                append(HttpHeaders.UserAgent,"Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Mobile Safari/537.36")
-                append(HttpHeaders.Cookie,
-                    "skey=${cookie.getValue("skey")}; " +
-                            "p_uin=${cookie.getValue("p_uin")};" +
-                            "pt4_token=${cookie.getValue("pt4_token")}; " +
-                            "p_skey=${cookie.getValue("p_skey")};"
-                )
+                append(HttpHeaders.UserAgent, userAgent)
+                append(HttpHeaders.Cookie,cookie.toList().joinToString(";") { "${it.first}=${it.second}" })
             }
         }
-        return stringResponse.contains("\"code\":0")//懒得写JSON反序列化了，直接判断文本是否存在吧，如果出问题再改
+        val jsonNode = objectMapper.readTree(stringResponse)
+        return jsonNode["code"].asInt() == 0//懒得写JSON反序列化了，直接判断文本是否存在吧，如果出问题再改
     }
 }
