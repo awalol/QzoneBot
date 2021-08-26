@@ -32,6 +32,8 @@ suspend fun main(args : Array<String>){
     val bot = BotFactory.newBot(qqUin.toLong(), args[1]) {
         protocol = BotConfiguration.MiraiProtocol.ANDROID_PAD
         fileBasedDeviceInfo()
+        redirectBotLogToDirectory()
+//        redirectNetworkLogToDirectory()
     }
 
     if(System.getProperty("webdriver.chrome.driver").isNullOrEmpty()){
@@ -49,27 +51,25 @@ suspend fun main(args : Array<String>){
 
     bot.globalEventChannel().filter { event: Event -> event is FriendMessageEvent || event is StrangerMessageEvent }.subscribeAlways<MessageEvent> {
         var image : Image? = null
-        lateinit var content : String
-        message.forEach { singleMessage ->
+        lateinit var message : String
+        this.message.forEach { singleMessage ->
             if(singleMessage is Image){
                 image = Image(singleMessage.imageId)
                 bot.logger.info(singleMessage.imageId)
             }else if(singleMessage is PlainText){
-                content = singleMessage.content
+                message = singleMessage.content
                 bot.logger.info("PlainText " + singleMessage.content)
             }
         }
 
-        if(qzoneCookie.isNotEmpty() && content.isNotEmpty()) {
+        if(qzoneCookie.isNotEmpty() && message.isNotEmpty()) {
             //匹配《》与（）
-            if("((?<=《).+(?=》))".toRegex().containsMatchIn(content) && "(?<=[（|(]).+(?=[）|)])".toRegex().containsMatchIn(content)){
+            if("((?<=《).+(?=》))".toRegex().containsMatchIn(message) && "(?<=[（|(]).+(?=[）|)])".toRegex().containsMatchIn(message)){
                 //获取歌曲信息
-                val songName = "((?<=《).+(?=》))".toRegex().findAll(content).first().value
-                val songSinger = "(?<=[（|(]).+(?=[）|)])".toRegex().findAll(content).last().value
-                bot.logger.info("$songName $songSinger")
-                val songInfo = MusicApi.qqMusicSongInfo(
-                    (MusicApi.qqMusicSearch(songName, songSinger)[0]["songmid"].asText())
-                )
+                val songName = "((?<=《).+(?=》))".toRegex().findAll(message).first().value
+                val songSinger = "(?<=[（|(]).+(?=[）|)])".toRegex().findAll(message).last().value
+                bot.logger.info("《$songName》 ($songSinger)")
+                val songInfo = MusicApi.qqMusicSongInfo((MusicApi.qqMusicSearch(songName, songSinger)[0]["songmid"].asText()))
 
                 try {
                     if (QzoneUtil.cookieIsValid(qzoneCookie)) {
@@ -77,7 +77,7 @@ suspend fun main(args : Array<String>){
 
                         //重试发送未发送成功的说说
                         if(waitToRepublish.isNotEmpty()){
-                            println("尝试重新发送之前发送失败的说说")
+                            bot.logger.info("尝试重新发送之前发送失败的说说")
                             val iterator = waitToRepublish.iterator() //https://stackoverflow.com/questions/14673653/why-isnt-this-code-causing-a-concurrentmodificationexception
                             while (iterator.hasNext()){
                                 val item = iterator.next()
