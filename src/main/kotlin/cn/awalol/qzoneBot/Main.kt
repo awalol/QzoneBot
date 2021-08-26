@@ -1,5 +1,6 @@
 package cn.awalol.qzoneBot
 
+import cn.awalol.qzoneBot.bean.qqMusic.Data
 import cn.awalol.qzoneBot.bean.qqMusic.Singer
 import cn.awalol.qzoneBot.bean.qqMusic.SongInfo
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -73,7 +74,7 @@ suspend fun main(args : Array<String>){
 
                 try {
                     if (QzoneUtil.cookieIsValid(qzoneCookie)) {
-                        push(songInfo,image,bot)
+                        push(songInfo.data[0],image,bot)
 
                         //重试发送未发送成功的说说
                         if(waitToRepublish.isNotEmpty()){
@@ -81,7 +82,7 @@ suspend fun main(args : Array<String>){
                             val iterator = waitToRepublish.iterator() //https://stackoverflow.com/questions/14673653/why-isnt-this-code-causing-a-concurrentmodificationexception
                             while (iterator.hasNext()){
                                 val item = iterator.next()
-                                push(MusicApi.qqMusicSongInfo(item.key),item.value,bot)
+                                push(MusicApi.qqMusicSongInfo(item.key).data[0],item.value,bot)
                                 iterator.remove()
                             }
                         }
@@ -106,9 +107,7 @@ suspend fun main(args : Array<String>){
     }
 }
 
-suspend fun push(songInfo : SongInfo, image : Image?,bot : Bot){
-    val songData = songInfo.data[0]
-
+suspend fun push(songData : Data, image : Image?,bot : Bot){
     //黑名单歌手判断
     songData.singer.forEach { singer: Singer ->
         if (singerBlackList.contains(singer.mid)) {
