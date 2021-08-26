@@ -132,7 +132,7 @@ suspend fun push(songInfo : SongInfo, image : Image?,bot : Bot){
                 songData.title,
                 songData.singer.joinToString(separator = "/"){it.name}
             ),
-            "http://y.gtimg.cn/music/photo_new/T002R800x800M000%s.jpg".format(songData.album.mid)
+            "https://y.gtimg.cn/music/photo_new/T002R800x800M000%s.jpg".format(songData.album.mid)
         )
     }
 }
