@@ -9,8 +9,6 @@ import io.ktor.client.engine.cio.*
 import io.ktor.client.request.*
 import io.ktor.http.*
 import kotlinx.coroutines.delay
-import org.openqa.selenium.Dimension
-import org.openqa.selenium.chrome.ChromeDriver
 import java.net.URLEncoder
 import java.util.*
 import kotlin.collections.HashMap

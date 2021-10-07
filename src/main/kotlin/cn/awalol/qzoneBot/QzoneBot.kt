@@ -2,8 +2,6 @@ package cn.awalol.qzoneBot
 
 import cn.awalol.qzoneBot.bean.qqMusic.Data
 import cn.awalol.qzoneBot.bean.qqMusic.Singer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.Bot
 import net.mamoe.mirai.event.Event
 import net.mamoe.mirai.event.events.FriendMessageEvent
@@ -14,10 +12,8 @@ import net.mamoe.mirai.event.globalEventChannel
 import net.mamoe.mirai.message.data.Image
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import net.mamoe.mirai.message.data.PlainText
-import okhttp3.internal.wait
 import java.util.*
 import kotlin.collections.HashMap
-import kotlin.concurrent.thread
 
 object QzoneBot {
     /**
