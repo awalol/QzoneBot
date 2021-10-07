@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class Data(
+internal data class Data(
     @JsonProperty("album")
     val album: Album,
     @JsonProperty("mid")

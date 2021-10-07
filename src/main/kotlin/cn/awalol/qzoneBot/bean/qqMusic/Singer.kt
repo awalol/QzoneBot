@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class Singer(
+internal data class Singer(
     @JsonProperty("mid")
     val mid: String,
     @JsonProperty("name")

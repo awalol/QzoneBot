@@ -3,7 +3,7 @@ package cn.awalol.qzoneBot.bean.qzoneSuosuo
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
-data class PicinfoX(
+internal data class PicinfoX(
     @JsonProperty("albumid")
     val albumid: String,
     @JsonProperty("height")
