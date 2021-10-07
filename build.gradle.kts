@@ -2,10 +2,11 @@ plugins {
     java
     kotlin("jvm") version "1.5.31"
     id("com.github.johnrengelman.shadow") version "6.1.0"
+    id("maven-publish")
 }
 
 group = "cn.awalol"
-version = "1.0-SNAPSHOT"
+version = "2.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -37,4 +38,23 @@ tasks.getByName<Test>("test") {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>{
     kotlinOptions.jvmTarget = "1.8"
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+            artifact(tasks["shadowJar"])
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            setUrl("https://maven.pkg.github.com/CNawalol/QzoneBot")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
