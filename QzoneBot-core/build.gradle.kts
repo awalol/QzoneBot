@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
 dependencies {
@@ -12,4 +13,8 @@ dependencies {
 //    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
 //    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
     implementation(kotlin("stdlib"))
+}
+
+tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
+    this.destinationDir = file("$rootDir/build/libs")
 }
