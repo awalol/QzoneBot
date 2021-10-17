@@ -27,7 +27,7 @@ jobs:
     - name: shadowJar
       run: ./gradle shadowJar
     - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: build/libs/QzoneBot-*.jar
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/libs/QzoneBot-*.jar
         
